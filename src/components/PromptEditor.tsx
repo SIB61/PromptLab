@@ -6,14 +6,17 @@ import {
   Copy,
   Check,
   RotateCcw,
-  Zap
+  Zap,
+  Maximize2
 } from 'lucide-react';
 import { PromptTester } from '../types/prompt';
 import { estimateTokens, extractVariables } from '../utils/tokenEstimator';
+import { FullScreenPromptModal } from './FullScreenPromptModal';
 
 interface PromptEditorProps {
   tester: PromptTester;
   onChange: (updated: Partial<PromptTester>) => void;
+  onRunTest?: () => void;
 }
 
 const SYSTEM_SNIPPETS = [
@@ -23,8 +26,9 @@ const SYSTEM_SNIPPETS = [
   { label: 'Cite Quotes', text: '\n\nWhenever making claims about the attached input files, quote the exact line or text.' },
 ];
 
-export const PromptEditor: React.FC<PromptEditorProps> = ({ tester, onChange }) => {
+export const PromptEditor: React.FC<PromptEditorProps> = ({ tester, onChange, onRunTest }) => {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
+  const [fullScreenModal, setFullScreenModal] = useState<'system' | 'human' | null>(null);
 
   const handleCopy = (text: string, section: string) => {
     navigator.clipboard.writeText(text);
@@ -78,11 +82,24 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({ tester, onChange }) 
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-xs">
             <span className="text-slate-400 text-[11px]">
               ~{sysTokens} tokens
             </span>
+
+            {/* Full Screen Modal Button */}
             <button
+              type="button"
+              onClick={() => setFullScreenModal('system')}
+              className="flex items-center gap-1 text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 px-2 py-1 rounded-md transition-colors border border-slate-700 text-[11px] font-medium"
+              title="Open full screen editor modal"
+            >
+              <Maximize2 className="w-3 h-3 text-violet-400" />
+              <span>Full Screen</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => handleCopy(tester.systemPrompt, 'system')}
               className="text-slate-400 hover:text-slate-200 p-1.5 rounded hover:bg-slate-800 transition-colors"
               title="Copy system prompt"
@@ -90,6 +107,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({ tester, onChange }) 
               {copiedSection === 'system' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
             <button
+              type="button"
               onClick={() => onChange({ systemPrompt: '' })}
               className="text-slate-500 hover:text-slate-300 p-1.5 rounded hover:bg-slate-800 text-[11px] transition-colors"
               title="Clear system prompt"
@@ -109,21 +127,32 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({ tester, onChange }) 
             className="w-full min-h-[130px] sm:min-h-[140px] bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono resize-y leading-relaxed"
           />
 
-          {/* Quick Snippets (touch friendly, scrollable on mobile) */}
-          <div className="mt-2.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-            <span className="text-[11px] text-slate-500 flex items-center gap-1 shrink-0">
-              <Zap className="w-3 h-3 text-amber-400" /> Quick Add:
-            </span>
-            {SYSTEM_SNIPPETS.map((snip, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => onChange({ systemPrompt: tester.systemPrompt + snip.text })}
-                className="text-[11px] bg-slate-800/90 hover:bg-slate-700 active:bg-slate-600 text-slate-300 px-2.5 py-1 rounded-md border border-slate-700/60 transition-colors shrink-0 whitespace-nowrap"
-              >
-                + {snip.label}
-              </button>
-            ))}
+          {/* Quick Snippets & Expand link */}
+          <div className="mt-2.5 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-0.5">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[11px] text-slate-500 flex items-center gap-1 shrink-0">
+                <Zap className="w-3 h-3 text-amber-400" /> Quick Add:
+              </span>
+              {SYSTEM_SNIPPETS.map((snip, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => onChange({ systemPrompt: tester.systemPrompt + snip.text })}
+                  className="text-[11px] bg-slate-800/90 hover:bg-slate-700 active:bg-slate-600 text-slate-300 px-2.5 py-1 rounded-md border border-slate-700/60 transition-colors shrink-0 whitespace-nowrap"
+                >
+                  + {snip.label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setFullScreenModal('system')}
+              className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 shrink-0 ml-auto"
+            >
+              <Maximize2 className="w-3 h-3" />
+              <span>Full Screen</span>
+            </button>
           </div>
         </div>
       </div>
@@ -142,11 +171,24 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({ tester, onChange }) 
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-xs">
             <span className="text-slate-400 text-[11px]">
               ~{humanTokens} tokens
             </span>
+
+            {/* Full Screen Modal Button */}
             <button
+              type="button"
+              onClick={() => setFullScreenModal('human')}
+              className="flex items-center gap-1 text-slate-200 hover:text-white bg-indigo-600/90 hover:bg-indigo-500 px-2.5 py-1 rounded-md transition-colors text-[11px] font-semibold shadow-sm"
+              title="Open full screen editor modal"
+            >
+              <Maximize2 className="w-3 h-3 text-white" />
+              <span>Full Screen</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => handleCopy(tester.humanPrompt, 'human')}
               className="text-slate-400 hover:text-slate-200 p-1.5 rounded hover:bg-slate-800 transition-colors"
               title="Copy human prompt"
@@ -154,6 +196,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({ tester, onChange }) 
               {copiedSection === 'human' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
             <button
+              type="button"
               onClick={() => onChange({ humanPrompt: '' })}
               className="text-slate-500 hover:text-slate-300 p-1.5 rounded hover:bg-slate-800 text-[11px] transition-colors"
               title="Clear human prompt"
@@ -173,24 +216,55 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({ tester, onChange }) 
             className="w-full min-h-[120px] sm:min-h-[130px] bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono resize-y leading-relaxed"
           />
 
-          {/* Detected or available variable tags */}
-          {detectedVars.length > 0 && (
-            <div className="mt-2.5 flex items-center gap-1.5 flex-wrap bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
-              <span className="text-[10px] text-indigo-400 flex items-center gap-1 font-medium">
-                <Braces className="w-3 h-3" /> Detected Variables:
-              </span>
-              {detectedVars.map((v) => (
-                <span
-                  key={v}
-                  className="text-[10px] bg-indigo-950/70 text-indigo-300 px-2 py-0.5 rounded border border-indigo-800/60 font-mono"
-                >
-                  {`{{${v}}}`}
+          <div className="mt-2.5 flex items-center justify-between gap-2 flex-wrap">
+            {/* Detected or available variable tags */}
+            {detectedVars.length > 0 ? (
+              <div className="flex items-center gap-1.5 flex-wrap bg-slate-950/60 p-1.5 rounded-lg border border-slate-800/80">
+                <span className="text-[10px] text-indigo-400 flex items-center gap-1 font-medium">
+                  <Braces className="w-3 h-3" /> Detected Variables:
                 </span>
-              ))}
-            </div>
-          )}
+                {detectedVars.map((v) => (
+                  <span
+                    key={v}
+                    className="text-[10px] bg-indigo-950/70 text-indigo-300 px-2 py-0.5 rounded border border-indigo-800/60 font-mono"
+                  >
+                    {`{{${v}}}`}
+                  </span>
+                ))}
+              </div>
+            ) : <div />}
+
+            <button
+              type="button"
+              onClick={() => setFullScreenModal('human')}
+              className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 ml-auto"
+            >
+              <Maximize2 className="w-3 h-3" />
+              <span>Full Screen Editor</span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Full Screen Prompt Modal */}
+      {fullScreenModal && (
+        <FullScreenPromptModal
+          type={fullScreenModal}
+          title={fullScreenModal === 'system' ? 'System Prompt' : 'Human Prompt (User Input)'}
+          value={fullScreenModal === 'system' ? tester.systemPrompt : tester.humanPrompt}
+          onChange={(newVal) => {
+            if (fullScreenModal === 'system') {
+              onChange({ systemPrompt: newVal });
+            } else {
+              onChange({ humanPrompt: newVal });
+            }
+          }}
+          onClose={() => setFullScreenModal(null)}
+          snippets={fullScreenModal === 'system' ? SYSTEM_SNIPPETS : []}
+          availableVariables={tester.variables}
+          onRunTest={onRunTest}
+        />
+      )}
     </div>
   );
 };

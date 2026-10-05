@@ -589,7 +589,11 @@ export default function App() {
           {/* Configuration Tab Content Container (Full vertical scroll on mobile) */}
           <div className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-4">
             {activeTab === 'prompt' && (
-              <PromptEditor tester={activeTester} onChange={handleUpdateTester} />
+              <PromptEditor
+                tester={activeTester}
+                onChange={handleUpdateTester}
+                onRunTest={handleRunFreshTest}
+              />
             )}
 
             {activeTab === 'files' && (
