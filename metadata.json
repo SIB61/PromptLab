@@ -1,0 +1,6 @@
+{
+  "name": "PromptLab - Stateless Prompt Tester & Benchmarking Studio",
+  "description": "A developer-grade prompt testing tool to configure system prompts, human prompts, and input files with isolated, fresh test runs every time.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
